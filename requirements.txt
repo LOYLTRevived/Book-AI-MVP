@@ -12,3 +12,4 @@ python-docx
 PyMuPDF
 ebooklib
 beautifulsoup4
+python-dotenv
