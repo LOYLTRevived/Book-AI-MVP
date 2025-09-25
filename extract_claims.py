@@ -95,7 +95,7 @@ def main():
     """
 
     # Replace this with the path to your book or article
-    test_file_path = "C:\\Users\\holla\\Downloads\\Earthship vol 1 chapter 1.pdf"
+    test_file_path = "C:\\Users\\holla\\Downloads\\1-3 Earthship.pdf"
     # test_file_path = "path/to/your/document.pdf"
     # test_file_path = "path/to/your/document.docx"
     # test_file_path = "path/to/your/document.epub"
