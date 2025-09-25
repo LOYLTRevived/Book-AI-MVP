@@ -13,3 +13,4 @@ PyMuPDF
 ebooklib
 beautifulsoup4
 python-dotenv
+huggingface_hub
