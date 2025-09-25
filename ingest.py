@@ -68,18 +68,18 @@ def read_file_content(filepath):
     """
     file_extension = os.path.splitext(filepath)[1].lower()
     if file_extension == '.txt':
-        return read_text_file
+        return read_text_file(filepath)
     if file_extension == '.pdf':
-        return read_pdf_file
+        return read_pdf_file(filepath)
     if file_extension == '.epub':
-        return read_epub_file
+        return read_epub_file(filepath)
     else:
         print(f"Unsupported file type: {file_extension}")
         return None
         
 
     
-def chunk_test(text, chunk_size=500, chunk_overlap=50):
+def chunk_text(text, chunk_size=500, chunk_overlap=50):
     """
     Splits a given test into smaller, overlapping chunks.
 
@@ -127,7 +127,7 @@ def main():
 
     text_context = read_text_file(input_filepath)
     if text_context:
-        chunks = chunk_test(text_context)
+        chunks = chunk_text(text_context)
         print(f"successfully chunked the file into {len(chunks)} chunks.")
         save_chunks_to_json(chunks, output_filepath)
     
