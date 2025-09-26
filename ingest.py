@@ -4,10 +4,16 @@ import os
 import json
 import argparse
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import fitz #PyMuPDF
 from ebooklib import epub
 from bs4 import BeautifulSoup 
+import subprocess
+import pdfplumber
+import sys
+import re
 
+def sanitize_filename(name):
+    # Remove or replace invalid filename characters: \ / : * ? " < > | 
+    return re.sub(r'[\\/:*?"<>|]', '_', name)
 
 
 def read_text_file(filepath):
@@ -35,10 +41,12 @@ def read_pdf_file(filepath):
     Reads a PDF file and extracts all text
     """
     try:
-        doc = fitz.open(filepath)
         text = ""
-        for page in doc:
-            text += page.get_text()
+        with pdfplumber.open(filepath) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
         return text
     except Exception as e:
         print(f"An error occured while reading the PDF: {e}")
@@ -113,6 +121,25 @@ def save_chunks_to_json(chunks, output_filepath):
     except Exception as e:
         print(f"An error occurred while saving the chunks: {e}")
 
+def get_ai_title_and_description(text):
+    process = subprocess.Popen(
+        [sys.executable, "ai_title.py"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    stdout, stderr = process.communicate(input=text)
+    if process.returncode != 0:
+        print(f"Error running ai_title.py: {stderr}")
+        return None, None
+    try:
+        result = json.loads(stdout)
+        return result.get("title"), result.get("description")
+    except Exception as e:
+        print(f"Error parsing JSON from ai_title.py output: {e}")
+        return None, None
+
 def main():
     """
     Main function to read a text file, chunk it, and save the chunks to a json file.
@@ -125,11 +152,23 @@ def main():
     base_name, _ = os.path.splitext(args.filename)
     output_filepath = os.path.join("data", f"{base_name}_chunks.json")
 
-    text_context = read_text_file(input_filepath)
+
+    text_context = read_file_content(input_filepath)
     if text_context:
+        # Get AI=generated title and description
+        doc_title, doc_description = get_ai_title_and_description(text_context)
+        if not doc_title:
+            doc_title = base_name
+        safe_title = sanitize_filename(doc_title)
+        output_filepath = os.path.join("data", f"{safe_title}_chunks.json")
+        metadata_filepath = os.path.join("data", f"{safe_title}_metadata.json")
         chunks = chunk_text(text_context)
-        print(f"successfully chunked the file into {len(chunks)} chunks.")
+        print(f"Successfully chunked the file into {len(chunks)} chunks.")
         save_chunks_to_json(chunks, output_filepath)
+        # Save description as metadata
+        with open(metadata_filepath, "w", encoding="utf-8") as f:
+            json.dump({"title": doc_title, "description": doc_description}, f, indent=4)
+        print(f"Metadata saved to '{metadata_filepath}'")
     
 if __name__ == "__main__":
     main()
