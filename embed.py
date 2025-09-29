@@ -30,7 +30,7 @@ The script primarily focuses on reading text and writing vectors to a cloud-host
 """
 
 import os
-import json
+import sqlite3
 import argparse
 from qdrant_client import QdrantClient, models
 from sentence_transformers import SentenceTransformer
@@ -41,88 +41,47 @@ load_dotenv()
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
-def load_chunks_from_json(filepath):
-    """
-    Loads text chunks from a JSON file.
+def load_claims_for_embedding(db_path="knowledge.db"):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("SELECT claim_id, claim_text, line_id, source_ref FROM claims")
+    claims = [{"claim_id": row[0], "claim_text": row[1], "line_id": row[2], "source_ref": row[3]} for row in c.fetchall()]
+    conn.close()
+    return claims
 
-    Args: 
-        filepath (str): The path to the JSON file containing the chunks.
-
-    Returns:
-        list: A list of text chunks.
-    """
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"Error: The file '{filepath}' was not found")
-        return None
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from the file {filepath}")
-        return None
-    except Exception as e:
-        print(f"An Error occured while loading the chunks {e}")
-        return None
-    
-
-def create_embeddings_and_upload(chunks, collection_name="knowledge_base", db_path="knowledge_base_db"):
-    """
-    Creates embeddings for text chunks and uploads them to a Qdrant collection.
-
-    Args:
-        Chunks (list): A list of text chunks.
-        collection_name (str): The name of the Qdrant collection to use.
-    """
-    # Intitialize the sentence transformer model
+def create_embeddings_and_upload_claims(claims, collection_name="knowledge_base"):
     model = SentenceTransformer('all-MiniLM-L6-v2')
-
-    # Intitialize the Qdrant Client
-    # For a local instance, you can use 'QdrantClient(":memeroy:")'
-    client = QdrantClient(
-        url=QDRANT_URL,
-        api_key=QDRANT_API_KEY,
-    )
-
-    # Create the collection in Qdrant if it doesn't exist
+    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
     client.recreate_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(size=model.get_sentence_embedding_dimension(), distance=models.Distance.COSINE)
     )
-
-    # Generate embeddings and prepare for upload
-    vectors = model.encode(chunks, show_progress_bar=True).tolist()
+    vectors = model.encode([claim["claim_text"]for claim in claims], show_progress_bar=True).tolist()
     points = [
         models.PointStruct(
-            id=i,
+            id=int(claim["claim_id"]),
             vector=vectors[i],
-            payload={"chunk_text": chunks}
+            payload={
+                "claim_id": int(claim["claim_id"]),
+                "claim_text": claim["claim_text"],
+                "line_id": claim["line_id"],
+                "source_ref": claim["source_ref"]
+            }
         )
-        for i, chunk in enumerate(chunks)
+        for i, claim in enumerate(claims)
     ]
-
-    # Upload the points to the collection
-    operation_info = client.upsert(
-        collection_name=collection_name,
-        wait=True,
-        points=points
-    )
-
-    print(f"Successfully uploaded {len(chunks)} points to the '{collection_name}' collection")
-    print(f"Operation info: {operation_info}")
-
+    client.upsert(collection_name=collection_name, wait=True, points=points)
+    print(f"Uploaded {len(claims)} claims to Qdrant.")
 
 def main ():
     """
-    Main function to read chunks, create embeddings, and upload to Qdrant.
+    Main function to create embeddings for claims and upload to Qdrant.
     """
-    parser = argparse.ArgumentParser(description="Create embeddings from text chunks and upload to Qdrant.")
-    parser.add_argument("filename", help="The name of the JSON file containing the chunks.")
-    args = parser.parse_args()
-
-    input_filepath = os.path.join ("data", args.filename)
-    chunks = load_chunks_from_json(input_filepath)
-    if chunks:
-        create_embeddings_and_upload(chunks)
+    claims = load_claims_for_embedding("knowledge.db")
+    if claims:
+        create_embeddings_and_upload_claims(claims)
+    else:
+        print("No claims found in the database.")
 
 if __name__ == "__main__":
     main()

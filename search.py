@@ -37,7 +37,7 @@ QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
 
-def perfrom_search(query: str, collection_name: str = "knowledge_base", db_path: str = "knowledge_base_db", top_k: int = 5):
+def semantic_search(query: str, collection_name: str = "knowledge_base", top_k: int = 5):
     """
     Performs a semantic search on the Qdrant collection.
 
@@ -68,7 +68,7 @@ def perfrom_search(query: str, collection_name: str = "knowledge_base", db_path:
         query_vector=query_vector,
         limit=top_k,
     )
-    return search_results
+    return [result.payload for result in search_results]
 
 def main():
     """
@@ -81,7 +81,7 @@ def main():
 
     print(f"Searching for '{args.query}'...")
 
-    results = perfrom_search(args.query, top_k=args.top_k)
+    results = semantic_search(args.query, top_k=args.top_k)
 
     print("\n--- Search Results ---")
     if not results:

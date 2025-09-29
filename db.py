@@ -125,14 +125,14 @@ def get_claims_by_status(status="all", db_path="knowledge.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     if status == "promoted":
-        c.execute("SELECT claim_text, source_ref FROM claims WHERE status = 'promoted'")
+        c.execute("SELECT claim_id, claim_text, source_ref FROM claims WHERE status = 'promoted'")
     elif status == "demoted":
-        c.execute("SELECT claim_text, source_ref FROM claims WHERE status = 'demoted'")
+        c.execute("SELECT claim_id, claim_text, source_ref FROM claims WHERE status = 'demoted'")
     elif status == "unreviewed":
-        c.execute("SELECT claim_text, source_ref FROM claims WHERE status = 'unreviewed'")
+        c.execute("SELECT claim_id, claim_text, source_ref FROM claims WHERE status = 'unreviewed'")
     else: # all
-        c.execute("SELECT claim_text, source_ref FROM claims")
-    claims = [{"claim_text": row[0], "source_ref": row[1]} for row in c.fetchall()]
+        c.execute("SELECT claim_id, claim_text, source_ref FROM claims")
+    claims = [{"claim_id": row[0], "claim_text": row[1], "source_ref": row[2]} for row in c.fetchall()]
     conn.close()
     return claims
 

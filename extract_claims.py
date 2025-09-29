@@ -108,7 +108,6 @@ Here is the text to analyze:
             for claim in claims_list:
                 if "claim_text" in claim:
                     claims_with_metadata = {
-                        "claim_id": str(uuid4()),
                         "claim_text": claim["claim_text"],
                         "source_file": filename
                     }
