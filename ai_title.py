@@ -3,7 +3,9 @@
 """
 Documentation for ai_title.py:
 
-Key Functionality
+Dependencies: Requires the external llm.get_llm_response function (from llm.py) and standard Python sys.
+
+Key Functionality:
     The main function is generate_title_and_description(text).
     Prompt Construction: It creates a prompt that instructs the LLM to generate a title (max 50 words) and a description.
     Input Limiting: It truncates the input text to the first 2000 characters before sending it to the LLM. This is a crucial step to manage prompt size and cost.
