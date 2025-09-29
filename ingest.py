@@ -127,8 +127,10 @@ def get_ai_title_and_description(text):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
+        encoding="utf-8"
     )
+    
     stdout, stderr = process.communicate(input=text)
     if process.returncode != 0:
         print(f"Error running ai_title.py: {stderr}")

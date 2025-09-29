@@ -1,8 +1,10 @@
 import os
 import json
+import sys
 import logging
 from uuid import uuid4
 from llm import get_llm_response
+from db import insert_claim
 from ingest import read_file_content, chunk_text, save_chunks_to_json
 
 # Configure logging to see what's happening
@@ -93,37 +95,43 @@ def main():
     """
     Main function to test the claim extraction process on a local file.
     """
-
-    # Replace this with the path to your book or article
-    test_file_path = "C:\\Users\\holla\\Downloads\\1-3 Earthship.pdf"
-    # test_file_path = "path/to/your/document.pdf"
-    # test_file_path = "path/to/your/document.docx"
-    # test_file_path = "path/to/your/document.epub"
-    
-    if not os.path.exists(test_file_path):
-        logging.error(f"Test file '{test_file_path}' not found. Please create it and add text or a PDF.")
+    if len(sys.argv) < 2:
+        print("Usage: python extract_claims.py <path_to_document>")
         return
     
-    book_chapter_text = read_file_content(test_file_path)
-
-    if not book_chapter_text:
-        logging.warning("Test file is empty or could not be read. Please check the file contents.")
+    chunk_file = sys.argv[1]
+    
+    if not os.path.exists(chunk_file):
+        logging.error(f"Test file '{chunk_file}' not found.")
         return
     
-    # Chunk the text and save the chunks to a file
-    text_chunks = chunk_text(book_chapter_text)
-    base_name = os.path.splitext(os.path.basename(test_file_path))[0]
-    chunks_output_file = f"{base_name}_chunks.json"
-    save_chunks_to_json(text_chunks, chunks_output_file)
-    
-    print(f"Extracting claims from '{test_file_path}'...")
-    claims = extract_claims(book_chapter_text, os.path.basename(test_file_path))
+    if chunk_file.endswith('.json'):
+        with open(chunk_file, 'r', encoding='utf-8') as f:
+            text_chunks = json.load(f)
+    else:
+        book_chapter_text = read_file_content(chunk_file)
+        text_chunks = [book_chapter_text]
+
+    # Now process each chunk to extract claims
+    claims = []
+    for chunk in text_chunks:
+        claims.extend(extract_claims(chunk, os.path.basename(chunk_file)))
 
     if claims:
         print("\n--- Extracted Claims ---")
         print(json.dumps(claims, indent=2))
+    # Automatically insert each claim into the database
+        for claim in claims:
+            insert_claim(
+                line_id="default", # You can set this to a topic or group if available (but just a placeholder for now)
+                claim_text=claim["claim_text"],
+                source_ref=claim["source_file"]
+            )
+        print(f"{len(claims)} claims inserted into the database.")
     else:
         print("No claims were extracted. See logs for details.")
+
+
 
 if __name__ == "__main__":
     main()
