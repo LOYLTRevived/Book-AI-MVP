@@ -33,6 +33,7 @@ import argparse
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
+from synthesize import synthesize_answer
 
 load_dotenv()
 
@@ -84,21 +85,29 @@ def main():
     parser = argparse.ArgumentParser(description="Find similar text chunks in a Qdrant database.")
     parser.add_argument("query", help="The text query to search for similar chunks.")
     parser.add_argument("--top_k", type=int, default=5, help="The number of top results to retrieve.")
+    parser.add_argument("--collection", default="chunks_collection", help="Qdrant collection to search.")
     args = parser.parse_args()
 
     print(f"Finding similar chunks for: '{args.query}'...")
 
-    results = find_similar_chunks(args.query, top_k=args.top_k)
+    results = find_similar_chunks(args.query, collection_name=args.collection,top_k=args.top_k)
 
     print("\n--- Search Results ---")
     if not results:
         print("No similar results found. Make sure you have uploaded the documents to the collection.")
     else:
+        chunk_claims = []
         for i, result in enumerate(results):
             chunk_text = result.payload.get("chunk_text", "N/A")
             score = result.score
             print(f"\nResult {i+1} (Score: {score:.4f}):")
             print(f"Chunk Text: {chunk_text}")
+            chunk_claims.append({"claim_text": chunk_text, "source_ref": "chunk"})
+        
+        # Synthesize answer from top chunks
+        answer = synthesize_answer(args.query, chunk_claims)
+        print("\n--- Synthesized Answer ---\n")
+        print(answer)
 
 if __name__ == "__main__":
     main()
