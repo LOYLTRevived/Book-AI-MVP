@@ -1,5 +1,27 @@
 # synthesize.py
 
+"""
+Documentation:
+
+Dependencies:
+The script requires argparse, sqlite3, the LLM gateway function (llm.get_llm_response), and the database function (db.get_claims_by_status).
+
+Key Functions:
+    1. get_current_winner_claims(db_path)
+    This function queries the SQLite database to fetch all claims currently marked as current_winner = 1 from the claims table. While present, the script's main() function uses the more flexible get_claims_by_status function instead, making this function potentially obsolete.
+
+    2. synthesize_answer(query, claims, past_claims=None)
+    This is the core function for generation.
+    Prompt Construction: It formats the list of provided claims (along with their source_ref) into a clear, structured list within the LLM prompt.
+    LLM Instruction: It instructs the LLM to act as a "synthesis engine," only use the provided claims to answer the query, and cite each claim's source in the final answer. This strict instruction is vital for maintaining factuality and traceability in the RAG system.
+    LLM Call: It calls get_llm_response(prompt) to generate the final synthesized answer.
+
+    3. Execution (main())
+    The script takes a query (the question) and a required --status filter (all, promoted, demoted, unsure) as command-line arguments.
+    It calls get_claims_by_status to retrieve the claims from the database based on the selected status.
+    It passes the retrieved claims and the query to synthesize_answer to produce the final output, which is then printed to the console.
+"""
+
 import argparse
 from llm import get_llm_response
 import sqlite3

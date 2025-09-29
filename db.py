@@ -5,31 +5,23 @@ Documentation:
 
 Dependencies: Requires the standard Python sqlite3 library.
 
-Key Functionality:
-The script defines several functions for database interaction, all using a default database path of "knowledge.db".
+Key Functionality Updates
+    1. Schema Change (create_tables)
+    NEW Column: status: The claims table now includes a status column, defaulting to 'unreviewed'. This formalizes the belief state, allowing claims to be filtered by their review status, which is crucial for RAG filtering in helper.py.
+    NEW Column: timestamp: Added to both claims and verdicts tables for tracking creation and logging times.
 
-    1. create_tables()
-    Initializes the database by creating two tables if they don't already exist:
-    claims: Stores the raw assertions extracted from documents.
-    Key columns include claim_id (Primary Key), line_id (a grouping identifier), claim_text, belief_score (for ranking), current_winner (a boolean flag for the best claim in a group), and source_ref (the source file).
-    verdicts: Stores a historical log of decisions made about claims.
-    Key columns include verdict_id (Primary Key), claim_id (Foreign Key referencing claims), and verdict (the actual judgment, e.g., "true," "false").
+    2. Claim Insertion and Retrieval
+    insert_claim: Now explicitly sets the initial status of a new claim to 'unreviewed'.
+    NEW Function: get_claims_by_status(status): This critical function allows retrieval of claims based on their status ('promoted', 'demoted', 'unreviewed', or 'all'). It's used by both the helper.py and synthesize.py scripts to curate the RAG context.
 
-    2. insert_claim(line_id, claim_text, source_ref)
-    Adds a new, extracted claim into the claims table.
-    The claim is initially given a belief_score of 0 and is not marked as the current_winner.
-    Returns the new claim_id.
+    3. Belief Logic Management (Refactored)
+    The automatic, line-based logic has been removed and replaced with explicit, single-claim update functions:
+    promote_claim(claim_id): Promotes a single claim by setting current_winner = 1, updating the status to 'promoted', and incrementing the belief_score by 1. It no longer demotes other claims within the same line_id.
+    NEW Function: demote_claim(claim_id): Explicitly demotes a single claim by setting current_winner = 0, updating the status to 'demoted', and decrementing the belief_score by 1.
 
-    3. insert_verdict(claim_id, verdict)
-    Logs a judgment (verdict) about a specific claim into the verdicts table, preserving the history of fact-checking/reviews.
-
-    4. promote_claim(claim_id, line_id)
-    Implements the core belief update logic:
-    It demotes all other claims that share the same line_id by setting their current_winner flag to 0 and decreasing their belief_score by 1.
-    It promotes the specified claim_id by setting its current_winner flag to 1 and increasing its belief_score by 1.
-
-    5. get_verdict_history(line_id)
-    Retrieves all recorded verdicts for every claim associated with a given line_id, allowing users to track the evolution of belief/judgment on a specific topic group.
+    4. Historical Logging
+    insert_verdict(claim_id, verdict): Logs a human judgment (verdict) into the verdicts table, maintaining a history of review actions.
+    get_verdict_history(line_id): Retrieves all historical verdicts for all claims associated with a given line_id.
 """
 
 import sqlite3

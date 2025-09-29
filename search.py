@@ -9,20 +9,18 @@ Requires os, argparse, dotenv, qdrant-client, and sentence-transformers.
 Key Functionality:
 This script is the main retrieval mechanism for the knowledge base, allowing users to find source material relevant to a question or claim.
 
-    1. Configuration and Model Consistency
-    Environment Variables: It loads QDRANT_URL and QDRANT_API_KEY to connect to the Qdrant instance, similar to embed.py.
-    Model Initialization: It initializes the SentenceTransformer model ('all-MiniLM-L6-v2'). It is critical that this model is the exact same one used in embed.py to ensure that the query vector is in the same semantic space as the stored vectors.
+    1. Function Name Change
+    The primary search function was renamed from the original perfrom_search to the clearer and more consistent semantic_search(query, collection_name, top_k).
 
-    2. perfrom_search(query, collection_name, top_k)
-    Query Vectorization: The input text query is encoded into a numerical vector using the Sentence Transformer model.
-    Qdrant Search: It calls the client.search() method on the specified collection_name (defaulting to "knowledge_base").
-    It passes the query_vector to find the most similar vectors in the collection.
-    The limit=top_k parameter controls how many of the top-scoring results are returned.
-    Return Value: It returns a list of search results, which include the vector ID, the similarity score (e.g., cosine similarity), and the original payload (the chunk text).
+    2. Return Value Modification (Critical Change)
+    The semantic_search function's return logic was changed to extract and only return the payload (a list of dictionaries) from the Qdrant search results. It no longer returns the complete Qdrant result object which included the score and full metadata.
 
-    3. Execution (main())
-    It takes the search query as a required command-line argument.
-    It prints the retrieved chunks, along with their calculated similarity score, allowing the user to judge the relevance of the result.
+    3. Execution (main()) — Logic Bug Introduced
+    The main() function is now logically inconsistent and contains a bug. Because semantic_search no longer returns the full result objects, the code in main() that attempts to access result.score and access payload data via result.payload.get(...) will fail.
+    If this script is run standalone, it will likely crash because the dictionary returned by semantic_search (the payload) does not have a .score attribute.
+
+    4. Intended Use
+    When used by the RAG orchestrator (helper.py), the script's output (a list of claim payloads containing claim_id) is precisely what is needed for the database filtering step. However, the standalone main() function should be corrected to handle the new return structure or revert the function's internal return logic.
 """
 
 import os

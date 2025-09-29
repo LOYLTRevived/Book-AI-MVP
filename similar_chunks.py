@@ -4,28 +4,23 @@
 Documentation:
 
 Dependencies:
-Requires os, argparse, dotenv, qdrant-client, and sentence-transformers.
+Requires os, argparse, dotenv, qdrant-client, sentence-transformers, and a new, crucial dependency: synthesize.synthesize_answer.
 
 Key Functionality:
 This script's function is nearly identical to search.py, reinforcing the RAG/retrieval capability of the system.
 
-    1. Configuration and Model Setup
-    Qdrant Connection: It uses the QDRANT_URL and QDRANT_API_KEY from environment variables to establish a connection to the vector database.
-    Model Consistency: It initializes the 'all-MiniLM-L6-v2' Sentence Transformer model, which is essential for encoding the query text into a vector that matches the space of the stored document vectors.
+    1. Retrieval (Finding Chunks)
+    Connection and Model: Connects to Qdrant and uses the standard 'all-MiniLM-L6-v2' model.
+    find_similar_chunks(query_text, collection_name, top_k): Performs semantic search, but now specifically targets the raw chunk vector store, which is defaulted to "chunks_collection" (as defined in the embed_chunks.py documentation).
+    Output: Returns the raw document chunks that are semantically related to the user's query.
 
-    2. find_similar_chunks(query_text, collection_name, top_k)
-    Vectorization: It encodes the input query_text into a vector representation.
-    Qdrant Search: It calls client.search() to query the vector database:
-    It looks for vectors closest to the query_vector.
-    It retrieves the top_k (defaulting to 5) results based on cosine similarity.
-    Output: It returns the list of similar search_results, which include the chunk text and the similarity score.
+    2. Generation (Synthesis Integration)
+    Context Preparation: In the main() function, after retrieving the chunks, the script iterates through the results. It constructs a list of dictionaries, where each dictionary represents a temporary "claim" consisting of the chunk_text and a placeholder "source_ref": "chunk".
+    Synthesis Call: It calls the new synthesize_answer(args.query, chunk_claims) function. This is the critical change: the script now passes the retrieved raw chunk context directly to the LLM for synthesis, rather than simply printing the raw chunks.
 
-    3. Distinction from search.py
-    While functionally the same, this script's name (similar_chunks) better reflects its use case: finding semantically related text portions within the document corpus, which is a common pattern in building custom knowledge bases.
-
-    4. Execution (main())
-    It takes the query text as a required command-line argument.
-    It prints the retrieved results, including the similarity score and the chunk text.
+    3. Output
+    It first prints the raw search results (score and chunk text), providing transparency on the retrieval step.
+    It then prints the final, LLM-generated Synthesized Answer based on those chunks.
 """
 
 import os
