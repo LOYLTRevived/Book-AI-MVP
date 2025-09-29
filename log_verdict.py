@@ -1,3 +1,5 @@
+# log_verdict.py
+
 import argparse
 from db import promote_claim, insert_verdict
 import sqlite3
