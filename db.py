@@ -46,6 +46,7 @@ def create_tables(db_path="knowledge.db"):
             claim_text TEXT,
             belief_score REAL DEFAULT 0,
             current_winner BOOLEAN DEFAULT 0,
+            status TEXT DEFAULT 'unreviewed',  # <-- new column
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             source_ref TEXT
         )
@@ -68,8 +69,8 @@ def insert_claim(line_id, claim_text, source_ref, db_path="knowledge.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute("""
-        INSERT INTO claims (line_id, claim_text, source_ref) 
-        VALUES (?, ?, ?)
+        INSERT INTO claims (line_id, claim_text, source_ref, status) 
+        VALUES (?, ?, ?, 'unreviewed')
     """, (line_id, claim_text, source_ref))
     conn.commit()
     claim_id = c.lastrowid
@@ -86,17 +87,21 @@ def insert_verdict(claim_id, verdict, db_path="knowledge.db"):
     conn.commit()
     conn.close()
 
-def promote_claim(claim_id, line_id, db_path="knowledge.db"):
+def promote_claim(claim_id, db_path="knowledge.db"):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
-    # Demote all other claims in the same line_id
     c.execute("""
-        UPDATE claims SET current_winner = 0, belief_score = belief_score - 1
-        WHERE line_id = ? AND claim_id != ?
-    """, (line_id, claim_id))
-    # Promote the selected claim
+        UPDATE claims SET current_winner = 1, status = 'promoted', belief_score = belief_score + 1
+        WHERE claim_id = ?
+    """, (claim_id,))
+    conn.commit()
+    conn.close()
+
+def demote_claim(claim_id, db_path="knowledge.db"):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
     c.execute("""
-        UPDATE claims SET current_winner = 1, belief_score = belief_score + 1
+        UPDATE claims SET current_winner = 0, status = 'demoted', belief_score = belief_score - 1
         WHERE claim_id = ?
     """, (claim_id,))
     conn.commit()
@@ -115,6 +120,21 @@ def get_verdict_history(line_id, db_path="knowledge.db"):
     history = c.fetchall()
     conn.close()
     return history
+
+def get_claims_by_status(status="all", db_path="knowledge.db"):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    if status == "promoted":
+        c.execute("SELECT claim_text, source_ref FROM claims WHERE status = 'promoted'")
+    elif status == "demoted":
+        c.execute("SELECT claim_text, source_ref FROM claims WHERE status = 'demoted'")
+    elif status == "unreviewed":
+        c.execute("SELECT claim_text, source_ref FROM claims WHERE status = 'unreviewed'")
+    else: # all
+        c.execute("SELECT claim_text, source_ref FROM claims")
+    claims = [{"claim_text": row[0], "source_ref": row[1]} for row in c.fetchall()]
+    conn.close()
+    return claims
 
 if __name__ == "__main__":
     create_tables()
