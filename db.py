@@ -59,14 +59,30 @@ def promote_claim(claim_id, line_id, db_path="knowledge.db"):
     c = conn.cursor()
     # Demote all other claims in the same line_id
     c.execute("""
-        UPDATE claims SET current_winner = 0 WHERE line_id =? AND claim_id!=?
+        UPDATE claims SET current_winner = 0, belief_score = belief_score - 1
+        WHERE line_id = ? AND claim_id != ?
     """, (line_id, claim_id))
     # Promote the selected claim
     c.execute("""
-        UPDATE claims SET current_winner = 1, belief_score=belief_score+1 WHERE claim_id =?
+        UPDATE claims SET current_winner = 1, belief_score = belief_score + 1
+        WHERE claim_id = ?
     """, (claim_id,))
     conn.commit()
     conn.close()
+
+def get_verdict_history(line_id, db_path="knowledge.db"):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("""
+        SELECT v.verdict_id, v.claim_id, c.claim_text, v.verdict, v.timestamp
+        FROM verdicts v
+        JOIN claims c ON v.claim_id = c.claim_id
+        WHERE c.line_id = ?
+        ORDER BY v.timestamp ASC
+    """, (line_id,))
+    history = c.fetchall()
+    conn.close()
+    return history
 
 if __name__ == "__main__":
     create_tables()
