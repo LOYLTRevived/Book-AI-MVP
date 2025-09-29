@@ -23,7 +23,7 @@ This script serves as the interface for a human reviewer to interact with the da
 """
 
 import argparse
-from db import promote_claim, insert_verdict
+from db import promote_claim, demote_claim, insert_verdict
 import sqlite3
 
 def log_verdict(cliam_id, verdict, db_path="knowledge.db"):
@@ -47,11 +47,24 @@ def log_verdict(cliam_id, verdict, db_path="knowledge.db"):
 
 def main():
     parser = argparse.ArgumentParser(description="Log a verdict for a claim and update belief logic.")
-    parser.add_argument("claim_id", type=int, help="The claim_id to mark as winner.")
-    parser.add_argument("verdict", choices=["true", "false", "unsure"], help="Your verdict for the claim.")
+    parser.add_argument("claim_id", type=int, help="The claim_id to act on.")
+    parser.add_argument("--promote", action="store_true", help="Promote this claim as winner.")
+    parser.add_argument("--demote", action="store_true", help="Demote this claim manually.")
+    parser.add_argument("--verdict", choices=["true", "false", "unsure"], help="Your verdict for the claim.")
     args = parser.parse_args()
 
-    log_verdict(args.claim_id, args.verdict)
+    if args.promote:
+        promote_claim(args.claim_id)
+        if args.verdict:
+            insert_verdict(args.claim_id, args.verdict)
+        print(f"Claim {args.claim_id} promoted.")
+    elif args.demote:
+        demote_claim(args.claim_id)
+        if args.verdict:
+            insert_verdict(args.claim_id, args.verdict)
+        print(f"Claim {args.claim_id} demoted.")
+    else:
+        print("Specify --promote or --demote.")
 
 
 if __name__ == "__main__":
