@@ -1,5 +1,30 @@
 # search.py
 
+"""
+Documentation:
+
+Dependencies:
+Requires os, argparse, dotenv, qdrant-client, and sentence-transformers.
+
+Key Functionality:
+This script is the main retrieval mechanism for the knowledge base, allowing users to find source material relevant to a question or claim.
+
+    1. Configuration and Model Consistency
+    Environment Variables: It loads QDRANT_URL and QDRANT_API_KEY to connect to the Qdrant instance, similar to embed.py.
+    Model Initialization: It initializes the SentenceTransformer model ('all-MiniLM-L6-v2'). It is critical that this model is the exact same one used in embed.py to ensure that the query vector is in the same semantic space as the stored vectors.
+
+    2. perfrom_search(query, collection_name, top_k)
+    Query Vectorization: The input text query is encoded into a numerical vector using the Sentence Transformer model.
+    Qdrant Search: It calls the client.search() method on the specified collection_name (defaulting to "knowledge_base").
+    It passes the query_vector to find the most similar vectors in the collection.
+    The limit=top_k parameter controls how many of the top-scoring results are returned.
+    Return Value: It returns a list of search results, which include the vector ID, the similarity score (e.g., cosine similarity), and the original payload (the chunk text).
+
+    3. Execution (main())
+    It takes the search query as a required command-line argument.
+    It prints the retrieved chunks, along with their calculated similarity score, allowing the user to judge the relevance of the result.
+"""
+
 import os
 import argparse
 from qdrant_client import QdrantClient

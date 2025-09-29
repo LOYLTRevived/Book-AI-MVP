@@ -1,5 +1,34 @@
 # extract_claims.py
 
+"""
+Documentation:
+
+Dependencies:
+Requires os, json, sys, logging, uuid (for claim IDs), and functions from llm.py and db.py.
+
+Key Functionality:
+This script orchestrates the process of transforming raw text into structured database entries.
+
+    1. Claim Extraction Logic (extract_claims(text, filename))
+    Chunking: It first calls chunk_text(text) (imported from ingest.py) to break the potentially large document text into smaller, manageable pieces for the LLM.
+    LLM Prompt: It loops through each text chunk and constructs a highly specific prompt. This prompt defines the role of the LLM ("meticulous claims extractor") and demands the output be a strict JSON array of objects, each containing a "claim_id" and "claim_text". This is crucial for reliable automated processing.
+    LLM Call and Parsing: It calls get_llm_response(prompt) (llm.py). It then attempts to parse the raw text response using json.loads().
+    Metadata Assignment: For every successfully parsed claim, it assigns:
+    A unique claim_id using uuid4().
+    The claim_text extracted by the LLM.
+    The source_file name for citation.
+
+    2. Persistence and Utility Functions
+    save_claims_to_json(claims, output_filepath): A utility function to save the extracted claims to a local JSON file, primarily for debugging or inspection.
+    Database Insertion (in main()): After all claims are extracted, the main function iterates through the final list and calls insert_claim(...) (from db.py) for each one.
+    It uses a placeholder line_id="default", but the design suggests this should be used later to group related claims (e.g., claims about "Chapter 3").
+
+    3. Execution (main())
+    It accepts a document path as a command-line argument.
+    It handles two types of input: a raw document (which it reads and chunks) or a JSON file of pre-chunked text.
+    It prints the extracted claims and confirms the insertion of claims into the database.
+"""
+
 import os
 import json
 import sys

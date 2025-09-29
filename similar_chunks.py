@@ -1,5 +1,33 @@
 # similar_chunks.py
 
+"""
+Documentation:
+
+Dependencies:
+Requires os, argparse, dotenv, qdrant-client, and sentence-transformers.
+
+Key Functionality:
+This script's function is nearly identical to search.py, reinforcing the RAG/retrieval capability of the system.
+
+    1. Configuration and Model Setup
+    Qdrant Connection: It uses the QDRANT_URL and QDRANT_API_KEY from environment variables to establish a connection to the vector database.
+    Model Consistency: It initializes the 'all-MiniLM-L6-v2' Sentence Transformer model, which is essential for encoding the query text into a vector that matches the space of the stored document vectors.
+
+    2. find_similar_chunks(query_text, collection_name, top_k)
+    Vectorization: It encodes the input query_text into a vector representation.
+    Qdrant Search: It calls client.search() to query the vector database:
+    It looks for vectors closest to the query_vector.
+    It retrieves the top_k (defaulting to 5) results based on cosine similarity.
+    Output: It returns the list of similar search_results, which include the chunk text and the similarity score.
+
+    3. Distinction from search.py
+    While functionally the same, this script's name (similar_chunks) better reflects its use case: finding semantically related text portions within the document corpus, which is a common pattern in building custom knowledge bases.
+
+    4. Execution (main())
+    It takes the query text as a required command-line argument.
+    It prints the retrieved results, including the similarity score and the chunk text.
+"""
+
 import os
 import argparse
 from qdrant_client import QdrantClient

@@ -1,5 +1,37 @@
 # db.py
 
+"""
+Documentation:
+
+Dependencies: Requires the standard Python sqlite3 library.
+
+Key Functionality:
+The script defines several functions for database interaction, all using a default database path of "knowledge.db".
+
+    1. create_tables()
+    Initializes the database by creating two tables if they don't already exist:
+    claims: Stores the raw assertions extracted from documents.
+    Key columns include claim_id (Primary Key), line_id (a grouping identifier), claim_text, belief_score (for ranking), current_winner (a boolean flag for the best claim in a group), and source_ref (the source file).
+    verdicts: Stores a historical log of decisions made about claims.
+    Key columns include verdict_id (Primary Key), claim_id (Foreign Key referencing claims), and verdict (the actual judgment, e.g., "true," "false").
+
+    2. insert_claim(line_id, claim_text, source_ref)
+    Adds a new, extracted claim into the claims table.
+    The claim is initially given a belief_score of 0 and is not marked as the current_winner.
+    Returns the new claim_id.
+
+    3. insert_verdict(claim_id, verdict)
+    Logs a judgment (verdict) about a specific claim into the verdicts table, preserving the history of fact-checking/reviews.
+
+    4. promote_claim(claim_id, line_id)
+    Implements the core belief update logic:
+    It demotes all other claims that share the same line_id by setting their current_winner flag to 0 and decreasing their belief_score by 1.
+    It promotes the specified claim_id by setting its current_winner flag to 1 and increasing its belief_score by 1.
+
+    5. get_verdict_history(line_id)
+    Retrieves all recorded verdicts for every claim associated with a given line_id, allowing users to track the evolution of belief/judgment on a specific topic group.
+"""
+
 import sqlite3
 
 def create_tables(db_path="knowledge.db"):

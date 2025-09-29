@@ -1,5 +1,37 @@
 #ingest.py
 
+"""
+Documentation:
+
+Dependencies:
+Requires os, json, argparse, sys, re, and several libraries for file parsing (pdfplumber, ebooklib, bs4, langchain.text_splitter). It also requires the external ai_title.py script.
+
+Key Functionality:
+This script is the main workhorse for preparing documents for the knowledge base.
+
+    1. File Reading Functions
+    The script provides specific readers for different file types:
+    read_text_file(filepath): Reads plain .txt files.
+    read_pdf_file(filepath): Uses pdfplumber to extract text from PDF documents.
+    read_epub_file(filepath): Uses ebooklib and BeautifulSoup to parse EPUB content and strip HTML tags to get clean text.
+    read_file_content(filepath): A dispatcher function that calls the appropriate reader based on the file extension.
+
+    2. Text Processing and Chunking
+    chunk_text(text, chunk_size=500, chunk_overlap=50): Uses the RecursiveCharacterTextSplitter from LangChain to divide the large document text into smaller chunks. This is critical for fitting content into the context window of LLMs and for effective vector search.
+    save_chunks_to_json(chunks, output_filepath): Saves the resulting list of text chunks to a JSON file, typically named [title]_chunks.json.
+
+    3. Metadata Generation
+    get_ai_title_and_description(text): This function is key. It executes ai_title.py as a subprocess and pipes the document text to its standard input (stdin). It captures the JSON output (title and description) from the subprocess's standard output (stdout) and parses it.
+
+    4. Execution (main())
+    It takes a filename as a command-line argument.
+    It reads the file and calls get_ai_title_and_description().
+    It uses the generated AI title (or the original filename as a fallback) to create a sanitized filename for output.
+    It executes the chunk_text function.
+    It saves the list of chunks to a JSON file (e.g., data/Document Title_chunks.json).
+    It saves the AI-generated title and description to a separate metadata JSON file (e.g., data/Document Title_metadata.json).
+"""
+
 import os
 import json
 import argparse

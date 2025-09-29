@@ -1,5 +1,31 @@
 # llm.py
 
+"""
+Documentation:
+
+Dependencies:
+	Requires os, logging, dotenv, and the huggingface_hub.InferenceClient.
+
+
+Key Functionality:
+The script defines the core mechanism for sending prompts to a remote LLM and retrieving structured text responses.
+
+    1. Configuration and Connection
+    Environment Variable: It requires and checks for the HUGGINGFACEHUB_API_TOKEN from the .env file to authenticate with the Hugging Face API.
+    Client Initialization: The InferenceClient is initialized with a specific model, defaulting to meta-llama/Meta-Llama-3-8B-Instruct.
+
+    2. get_llm_response(prompt, model_name)
+    The LLM Gateway: This is the single function used by the entire codebase to communicate with the AI.
+    Chat Completion Endpoint: It specifically uses the client.chat_completion method, which is generally better suited for conversational and instruction-tuned models like Llama.
+    System Settings (Inference Parameters):
+    max_tokens=500: The output length is set relatively high to accommodate the long-form JSON output required by extract_claims.py.
+    temperature=0.3: The temperature is set low to encourage deterministic, structured, and factual responses, which is essential when expecting valid JSON output for titles and claim extraction.
+    Output: It returns the text content of the LLM's response. It includes error handling to return an empty string if the connection or API call fails.
+
+    3. Execution (main())
+    Contains a test case to demonstrate the function by sending a simple query ("Explain why the sky looks blue...") and printing the response.
+"""
+
 import os
 import logging
 from huggingface_hub import InferenceClient
