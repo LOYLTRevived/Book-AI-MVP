@@ -1,0 +1,23 @@
+{
+  "name": "book-ai-mvp",
+  "version": "1.0.0",
+  "description": "Books + AI + Fighting = Loyl",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LOYLTRevived/Book-AI-MVP.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LOYLTRevived/Book-AI-MVP/issues"
+  },
+  "homepage": "https://github.com/LOYLTRevived/Book-AI-MVP#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.18"
+  }
+}

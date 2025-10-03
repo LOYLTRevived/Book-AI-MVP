@@ -15,3 +15,4 @@ beautifulsoup4
 python-dotenv
 huggingface_hub
 pdfplumber
+flask

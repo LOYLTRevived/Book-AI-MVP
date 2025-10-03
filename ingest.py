@@ -182,7 +182,7 @@ def main():
     parser.add_argument("filename", help="The name of the text file in the 'data' directory.")
     args = parser.parse_args()
 
-    input_filepath = os.path.join("data", args.filename)
+    input_filepath = args.filename
     base_name, _ = os.path.splitext(args.filename)
     output_filepath = os.path.join("data", f"{base_name}_chunks.json")
 
